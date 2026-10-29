@@ -1,0 +1,703 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>PyroQuadCom Temperature Monitor</title>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <style>
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            padding: 20px;
+            font-family: Arial, sans-serif;
+            background: #f4f6f8;
+            color: #222;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 1000px;
+            margin: auto;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .header h1 {
+            margin: 0;
+            font-size: 30px;
+        }
+
+        .header p {
+            margin: 8px 0 0;
+            color: #666;
+            font-size: 14px;
+        }
+
+        .card {
+            background: white;
+            border-radius: 16px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 14px rgba(0, 0, 0, 0.08);
+        }
+
+        .current-card {
+            text-align: center;
+        }
+
+        .current-label {
+            font-size: 16px;
+            color: #666;
+            margin-bottom: 8px;
+        }
+
+        .temperature {
+            font-size: 64px;
+            font-weight: bold;
+            line-height: 1.1;
+            margin: 10px 0;
+        }
+
+        .status {
+            display: inline-block;
+            padding: 8px 18px;
+            border-radius: 20px;
+            font-size: 18px;
+            font-weight: bold;
+            background: #eeeeee;
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+        }
+
+        .stat-card {
+            text-align: center;
+            margin-bottom: 0;
+        }
+
+        .stat-title {
+            font-size: 15px;
+            color: #666;
+            margin-bottom: 10px;
+        }
+
+        .stat-value {
+            font-size: 28px;
+            font-weight: bold;
+        }
+
+        .section-title {
+            margin: 0 0 18px;
+            font-size: 20px;
+        }
+
+        .chart-container {
+            position: relative;
+            width: 100%;
+            height: 350px;
+        }
+
+        .table-container {
+            width: 100%;
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            min-width: 500px;
+        }
+
+        th,
+        td {
+            padding: 12px 10px;
+            text-align: center;
+            border-bottom: 1px solid #e5e5e5;
+            font-size: 14px;
+        }
+
+        th {
+            background: #f7f7f7;
+            font-weight: bold;
+        }
+
+        .footer {
+            text-align: center;
+            color: #888;
+            font-size: 13px;
+            padding: 5px 0 15px;
+        }
+
+        .export-card {
+    text-align: center;
+}
+
+.export-button {
+    display: inline-block;
+    width: 100%;
+    max-width: 350px;
+    padding: 14px 20px;
+    border-radius: 10px;
+    background: #222;
+    color: white;
+    text-decoration: none;
+    font-weight: bold;
+    font-size: 16px;
+}
+
+.export-button:active {
+    transform: scale(0.98);
+}
+
+        @media (max-width: 700px) {
+
+            body {
+                padding: 10px;
+            }
+
+            .header {
+                margin-bottom: 15px;
+            }
+
+            .header h1 {
+                font-size: 24px;
+            }
+
+            .header p {
+                font-size: 13px;
+            }
+
+            .card {
+                padding: 16px;
+                border-radius: 14px;
+                margin-bottom: 14px;
+            }
+
+            .temperature {
+                font-size: 48px;
+            }
+
+            .status {
+                font-size: 16px;
+                padding: 7px 16px;
+            }
+
+            .stats {
+                grid-template-columns: 1fr;
+                gap: 12px;
+            }
+
+            .stat-card {
+                padding: 16px;
+            }
+
+            .stat-title {
+                margin-bottom: 6px;
+            }
+
+            .stat-value {
+                font-size: 25px;
+            }
+
+            .section-title {
+                font-size: 18px;
+            }
+
+            .chart-container {
+                height: 260px;
+            }
+
+            th,
+            td {
+                padding: 10px 8px;
+                font-size: 13px;
+            }
+
+        }
+
+        @media (max-width: 400px) {
+
+            .temperature {
+                font-size: 42px;
+            }
+
+            .header h1 {
+                font-size: 22px;
+            }
+
+            .chart-container {
+                height: 230px;
+            }
+
+        }
+
+    </style>
+
+</head>
+
+<body>
+
+<div class="container">
+
+    <div class="header">
+
+        <h1>🌡️ PyroQuadCom Temperature Monitor</h1>
+
+        <p>Live Temperature Monitoring System</p>
+
+    </div>
+
+
+    <div class="card current-card">
+
+        <div class="current-label">
+            Current Temperature
+        </div>
+
+        <div
+            class="temperature"
+            id="currentTemperature">
+            -- °C
+        </div>
+
+        <div
+            class="status"
+            id="currentStatus">
+            Loading...
+        </div>
+
+    </div>
+
+
+    <div class="stats">
+
+        <div class="card stat-card">
+
+            <div class="stat-title">
+                📈 Maximum
+            </div>
+
+            <div
+                class="stat-value"
+                id="maximumTemperature">
+                -- °C
+            </div>
+
+        </div>
+
+
+        <div class="card stat-card">
+
+            <div class="stat-title">
+                📉 Minimum
+            </div>
+
+            <div
+                class="stat-value"
+                id="minimumTemperature">
+                -- °C
+            </div>
+
+        </div>
+
+
+        <div class="card stat-card">
+
+            <div class="stat-title">
+                ⏱️ Total Readings
+            </div>
+
+            <div
+                class="stat-value"
+                id="totalReadings">
+                0
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <div class="card">
+
+        <h2 class="section-title">
+            📊 Temperature History
+        </h2>
+
+        <div class="chart-container">
+
+            <canvas id="temperatureChart"></canvas>
+
+        </div>
+
+    </div>
+
+
+    <div class="card">
+
+        <h2 class="section-title">
+            📋 Recent Readings
+        </h2>
+
+        <div class="table-container">
+
+            <table>
+
+                <thead>
+
+                    <tr>
+                        <th>Time</th>
+                        <th>Temperature</th>
+                        <th>Status</th>
+                    </tr>
+
+                </thead>
+
+                <tbody id="readingsTable">
+
+                </tbody>
+
+            </table>
+
+        </div>
+
+    </div>
+    
+<div class="card">
+
+    <h2 class="section-title">
+        ⚠️ Warning / Overheating History
+    </h2>
+
+    <div class="table-container">
+
+        <table>
+
+            <thead>
+
+                <tr>
+                    <th>Time</th>
+                    <th>Temperature</th>
+                    <th>Status</th>
+                </tr>
+
+            </thead>
+
+            <tbody id="alertsTable">
+
+            </tbody>
+
+        </table>
+
+    </div>
+
+</div>
+    <div class="card export-card">
+
+    <a
+        href="/export/csv"
+        class="export-button">
+        📥 Export Readings to CSV
+    </a>
+</div>
+    <div class="footer">
+
+        Live updates every 2 seconds
+
+    </div>
+
+</div>
+
+
+<script>
+
+let temperatureChart;
+
+
+async function loadData() {
+
+    try {
+
+        const response =
+            await fetch("/api/data");
+
+        const data =
+            await response.json();
+
+        if (!data.success) {
+            return;
+        }
+
+
+        const readings =
+            data.readings;
+
+
+        if (readings.length > 0) {
+
+            const latest =
+                readings[readings.length - 1];
+
+
+            document.getElementById(
+                "currentTemperature"
+            ).textContent =
+                latest.temperature.toFixed(2) + " °C";
+
+
+            document.getElementById(
+                "currentStatus"
+            ).textContent =
+                latest.status;
+
+        }
+
+
+        if (data.maximum !== null) {
+
+            document.getElementById(
+                "maximumTemperature"
+            ).textContent =
+                data.maximum.toFixed(2) + " °C";
+
+        }
+
+
+        if (data.minimum !== null) {
+
+            document.getElementById(
+                "minimumTemperature"
+            ).textContent =
+                data.minimum.toFixed(2) + " °C";
+
+        }
+
+
+        document.getElementById(
+            "totalReadings"
+        ).textContent =
+            data.total;
+
+
+        updateChart(readings);
+
+        updateTable(readings);
+
+    }
+
+    catch (error) {
+
+        console.error(
+            "Error loading data:",
+            error
+        );
+
+    }
+
+}
+
+
+function updateChart(readings) {
+
+    const labels =
+        readings.map(
+            reading => reading.timestamp
+        );
+
+
+    const temperatures =
+        readings.map(
+            reading => reading.temperature
+        );
+
+
+    if (temperatureChart) {
+
+        temperatureChart.data.labels =
+            labels;
+
+        temperatureChart.data.datasets[0].data =
+            temperatures;
+
+        temperatureChart.update();
+
+        return;
+
+    }
+
+
+    const ctx =
+        document.getElementById(
+            "temperatureChart"
+        );
+
+
+    temperatureChart =
+        new Chart(ctx, {
+
+            type: "line",
+
+            data: {
+
+                labels: labels,
+
+                datasets: [{
+
+                    label: "Temperature (°C)",
+
+                    data: temperatures,
+
+                    borderWidth: 2,
+
+                    tension: 0.3,
+
+                    fill: false
+
+                }]
+
+            },
+
+            options: {
+
+                responsive: true,
+
+                maintainAspectRatio: false,
+
+                scales: {
+
+                    y: {
+
+                        beginAtZero: false
+
+                    }
+
+                }
+
+            }
+
+        });
+
+}
+
+
+function updateTable(readings) {
+
+    const table =
+        document.getElementById(
+            "readingsTable"
+        );
+
+
+    table.innerHTML = "";
+
+
+    const reversed =
+        [...readings].reverse();
+
+
+    reversed.forEach(
+        reading => {
+
+            const row =
+                document.createElement("tr");
+
+
+            row.innerHTML = `
+                <td>${reading.timestamp}</td>
+                <td>${reading.temperature.toFixed(2)} °C</td>
+                <td>${reading.status}</td>
+            `;
+
+
+            table.appendChild(row);
+
+        }
+    );
+
+}
+
+async function loadAlerts() {
+
+    try {
+
+        const response =
+            await fetch("/api/alerts");
+
+        const data =
+            await response.json();
+
+        if (!data.success) {
+            return;
+        }
+
+        const table =
+            document.getElementById("alertsTable");
+
+        table.innerHTML = "";
+
+        if (data.alerts.length === 0) {
+
+            table.innerHTML = `
+                <tr>
+                    <td colspan="3">
+                        No warning or overheating records
+                    </td>
+                </tr>
+            `;
+
+            return;
+        }
+
+        data.alerts.forEach(alert => {
+
+            const row =
+                document.createElement("tr");
+
+            row.innerHTML = `
+                <td>${alert.timestamp}</td>
+                <td>${alert.temperature.toFixed(2)} °C</td>
+                <td>${alert.status}</td>
+            `;
+
+            table.appendChild(row);
+
+        });
+
+    } catch (error) {
+
+        console.error(
+            "Error loading alerts:",
+            error
+        );
+
+    }
+
+}
+
+loadData();
+loadAlerts();
+
+setInterval(loadData, 2000);
+setInterval(loadAlerts, 2000);
+</script>
+
+</body>
+
+</html>
